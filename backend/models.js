@@ -60,6 +60,12 @@ db.Attendance = Sequelize.define('attendance', {
 db.Student.belongsToMany(db.Course, { through: db.Enrollment, foreignKey: 'studentId' });
 db.Course.belongsToMany(db.Student, { through: db.Enrollment, foreignKey: 'courseId' });
 
+db.Enrollment.belongsTo(db.Student, { foreignKey: 'studentId' });
+db.Enrollment.belongsTo(db.Course, { foreignKey: 'courseId' });
+db.Student.hasMany(db.Enrollment, { foreignKey: 'studentId' });
+db.Course.hasMany(db.Enrollment, { foreignKey: 'courseId' });
+
+
 db.Department.hasMany(db.Teacher);
 db.Teacher.belongsTo(db.Department);
 

@@ -277,21 +277,39 @@ exports.createCourse = async (req, res) => {
 };
 
 exports.getStudentEnrollments = async (req, res) => {
-    const { studentId } = req.params;
-    const student = await db.Student.findByPk(studentId, {
-        include: {
-            model: db.Course,
-            through: { attributes: ['id', 'semester', 'year', 'grade'] }
+    try {
+        const { studentId } = req.params;
+
+        // Get enrollments with course information
+        const enrollments = await db.Enrollment.findAll({
+            where: { studentId },
+            include: [{
+                model: db.Course,
+                attributes: ['id', 'name', 'description', 'credits', 'code']
+            }],
+            attributes: ['id', 'semester', 'year', 'grade', 'enrollmentDate', 'courseId']
+        });
+
+        if (!enrollments) {
+            return res.status(404).json({ error: 'Student not found' });
         }
-    });
-    if (!student) return res.status(404).json({ error: 'Student not found' });
-    res.json(student.Courses);
+
+        res.json(enrollments);
+    } catch (error) {
+        console.error('Error fetching student enrollments:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 };
 
 exports.enrollStudent = async (req, res) => {
-    const { studentId, courseId, semester, year } = req.body;
-    const enrollment = await db.Enrollment.create({ studentId, courseId, semester, year, enrollmentDate: new Date() });
-    res.status(201).json(enrollment);
+    try {
+        const { studentId, courseId, semester, year } = req.body;
+        const enrollment = await db.Enrollment.create({ studentId, courseId, semester, year, enrollmentDate: new Date() });
+        res.status(201).json(enrollment);
+    } catch (error) {
+        console.error('Error enrolling student:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 };
 
 
