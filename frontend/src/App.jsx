@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import StartPage from './components/Startpage'
+import StartPage from './components/StartPage'
+import DepartmentManagement from './components/DepartmentManagement'
 import StudentLogin from './components/StudentLogin'
 import StudentRegister from './components/StudentRegister'
 import TeacherLogin from './components/TeacherLogin'
@@ -20,7 +21,7 @@ function App() {
           <Route path="/student/register" element={<StudentRegister />} />
           <Route path="/teacher/login" element={<TeacherLogin />} />
           <Route path="/teacher/register" element={<TeacherRegister />} />
-          {/* You'll need to create these dashboard components */}
+          <Route path="/department/manage" element={<DepartmentManagement />} />
           <Route path="/student/dashboard" element={<ProtectedRoute allowedRole="student"><StudentDashboard /></ProtectedRoute>} />
           <Route path="/teacher/dashboard" element={<ProtectedRoute allowedRole="teacher"><TeacherDashboard /></ProtectedRoute>} />
         </Routes>

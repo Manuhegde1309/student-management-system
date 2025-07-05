@@ -48,8 +48,10 @@ db.Teacher = Sequelize.define('teacher', {
 
 db.Department = Sequelize.define('department', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    name: DataTypes.STRING
-})
+    name: { type: DataTypes.STRING, allowNull: false, unique: true },
+    description: { type: DataTypes.TEXT, allowNull: true },
+    headOfDepartment: { type: DataTypes.STRING, allowNull: true }
+});
 
 db.Attendance = Sequelize.define('attendance', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },

@@ -238,27 +238,6 @@ exports.loginTeacher = async (req, res) => {
     }
 };
 
-exports.getAllDepartments = async (req, res) => {
-    try {
-        const departments = await db.Department.findAll();
-        res.status(200).json(departments);
-    } catch (error) {
-        console.error("Error fetching departments:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
-
-exports.createDepartment = async (req, res) => {
-    try {
-        const { name } = req.body;
-        const newDepartment = await db.Department.create({ name });
-        res.status(201).json(newDepartment);
-    } catch (error) {
-        console.error("Error creating department:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
-
 exports.getAllCourses = async (req, res) => {
     try {
         const courses = await db.Course.findAll();
@@ -312,5 +291,162 @@ exports.enrollStudent = async (req, res) => {
     }
 };
 
+
+exports.createDepartment = async (req, res) => {
+    try {
+        const { name, description, headOfDepartment } = req.body;
+
+        // Check if department already exists
+        const existingDepartment = await db.Department.findOne({
+            where: { name }
+        });
+
+        if (existingDepartment) {
+            return res.status(400).json({ error: 'Department already exists' });
+        }
+
+        const department = await db.Department.create({
+            name,
+            description,
+            headOfDepartment
+        });
+
+        res.status(201).json({
+            message: 'Department created successfully',
+            department: {
+                id: department.id,
+                name: department.name,
+                description: department.description,
+                headOfDepartment: department.headOfDepartment
+            }
+        });
+    } catch (error) {
+        console.error('Department creation error:', error);
+        res.status(500).json({ error: 'Failed to create department' });
+    }
+};
+
+exports.getAllDepartments = async (req, res) => {
+    try {
+        const departments = await db.Department.findAll({
+            attributes: ['id', 'name', 'description', 'headOfDepartment', 'createdAt'],
+            include: [
+                {
+                    model: db.Course,
+                    attributes: ['id', 'name', 'code'],
+                    required: false
+                },
+                {
+                    model: db.Teacher,
+                    attributes: ['id', 'firstName', 'lastName', 'username'],
+                    required: false
+                }
+            ]
+        });
+
+        res.json(departments);
+    } catch (error) {
+        console.error('Error fetching departments:', error);
+        res.status(500).json({ error: 'Failed to fetch departments' });
+    }
+};
+
+exports.getDepartmentById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const department = await db.Department.findByPk(id, {
+            include: [
+                {
+                    model: db.Course,
+                    attributes: ['id', 'name', 'code', 'credits'],
+                    required: false
+                },
+                {
+                    model: db.Teacher,
+                    attributes: ['id', 'firstName', 'lastName', 'username', 'email'],
+                    required: false
+                }
+            ]
+        });
+
+        if (!department) {
+            return res.status(404).json({ error: 'Department not found' });
+        }
+
+        res.json(department);
+    } catch (error) {
+        console.error('Error fetching department:', error);
+        res.status(500).json({ error: 'Failed to fetch department' });
+    }
+};
+
+exports.updateDepartment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description, headOfDepartment } = req.body;
+
+        const department = await db.Department.findByPk(id);
+        if (!department) {
+            return res.status(404).json({ error: 'Department not found' });
+        }
+
+        // Check if name is being changed and if it already exists
+        if (name !== department.name) {
+            const existingDepartment = await db.Department.findOne({
+                where: { name }
+            });
+            if (existingDepartment) {
+                return res.status(400).json({ error: 'Department name already exists' });
+            }
+        }
+
+        await department.update({
+            name: name || department.name,
+            description: description || department.description,
+            headOfDepartment: headOfDepartment || department.headOfDepartment
+        });
+
+        res.json({
+            message: 'Department updated successfully',
+            department: {
+                id: department.id,
+                name: department.name,
+                description: department.description,
+                headOfDepartment: department.headOfDepartment
+            }
+        });
+    } catch (error) {
+        console.error('Error updating department:', error);
+        res.status(500).json({ error: 'Failed to update department' });
+    }
+};
+
+exports.deleteDepartment = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const department = await db.Department.findByPk(id);
+        if (!department) {
+            return res.status(404).json({ error: 'Department not found' });
+        }
+
+        // Check if department has courses or teachers
+        const coursesCount = await db.Course.count({ where: { departmentId: id } });
+        const teachersCount = await db.Teacher.count({ where: { departmentId: id } });
+
+        if (coursesCount > 0 || teachersCount > 0) {
+            return res.status(400).json({
+                error: 'Cannot delete department. It has associated courses or teachers.'
+            });
+        }
+
+        await department.destroy();
+        res.json({ message: 'Department deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting department:', error);
+        res.status(500).json({ error: 'Failed to delete department' });
+    }
+};
 
 

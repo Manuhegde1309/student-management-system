@@ -18,6 +18,9 @@ router.get('/course', controllers.getAllCourses);
 router.post('/course', controllers.createCourse);
 router.get('/department', controllers.getAllDepartments);
 router.post('/department', controllers.createDepartment);
+router.get('/department/:id', controllers.getDepartmentById);
+router.put('/department/:id', controllers.updateDepartment);
+router.delete('/department/:id', controllers.deleteDepartment);
 router.get('/enrollment/:studentId', controllers.getStudentEnrollments);
 router.post('/enrollment', controllers.enrollStudent);
 

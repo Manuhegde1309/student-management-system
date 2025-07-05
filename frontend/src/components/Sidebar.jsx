@@ -19,6 +19,7 @@ const Sidebar = ({ activeSection, onSectionChange, userType = 'student' }) => {
         { id: 'grades', label: 'Grading', icon: '⭐' },
         { id: 'attendance', label: 'Attendance', icon: '📅' },
         { id: 'profile', label: 'Edit Profile', icon: '👤' },
+        //{ id: 'department', label: 'Department Management', icon: '🏢' },
     ];
 
     const menuItems = userType === 'student' ? studentMenuItems : teacherMenuItems;

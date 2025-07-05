@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import DepartmentManagement from './DepartmentManagement';
 
 export default function StartPage() {
     const navigate = useNavigate();
@@ -44,6 +45,19 @@ export default function StartPage() {
                                     className="w-full flex justify-center py-2 px-4 border border-green-600 rounded-md shadow-sm text-sm font-medium text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                                 >
                                     Register as Teacher
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="border-t border-gray-200 pt-6">
+                        <div className="text-center">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">Department Management</h3>
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => navigate('/department/manage')}
+                                    className="w-full flex justify-center py-2 px-4 border border-green-600 rounded-md shadow-sm text-sm font-medium text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                >
+                                    Manage Departments
                                 </button>
                             </div>
                         </div>
