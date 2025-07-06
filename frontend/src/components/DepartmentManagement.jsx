@@ -7,20 +7,21 @@ import { useNavigate } from 'react-router-dom';
 
 const DepartmentManagement = () => {
     const navigate = useNavigate();
-
     const { user } = useAuthStore();
     const [departments, setDepartments] = useState([]);
+    const [teachers, setTeachers] = useState([]); // Add this state
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingDepartment, setEditingDepartment] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        headOfDepartment: ''
+        headOfDepartment: '' // This will now store teacher ID
     });
 
     useEffect(() => {
         fetchDepartments();
+        fetchTeachers(); // Add this call
     }, []);
 
     const fetchDepartments = async () => {
@@ -38,20 +39,41 @@ const DepartmentManagement = () => {
         }
     };
 
+    // Add this new function to fetch teachers
+    const fetchTeachers = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('http://localhost:3000/api/teacher', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setTeachers(response.data || []);
+        } catch (error) {
+            console.error('Error fetching teachers:', error);
+            setTeachers([]);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
 
+            // Fix: Send the correct field name to backend
+            const submitData = {
+                name: formData.name,
+                description: formData.description,
+                headOfDepartmentId: formData.headOfDepartment // Change this line
+            };
+
             if (editingDepartment) {
                 // Update existing department
-                await axios.put(`http://localhost:3000/api/department/${editingDepartment.id}`, formData, {
+                await axios.put(`http://localhost:3000/api/department/${editingDepartment.id}`, submitData, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 alert('Department updated successfully!');
             } else {
                 // Create new department
-                await axios.post('http://localhost:3000/api/department', formData, {
+                await axios.post('http://localhost:3000/api/department', submitData, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 alert('Department created successfully!');
@@ -71,7 +93,7 @@ const DepartmentManagement = () => {
         setFormData({
             name: department.name,
             description: department.description || '',
-            headOfDepartment: department.headOfDepartment || ''
+            headOfDepartment: department.headOfDepartmentId || '' // Use the teacher ID
         });
         setIsCreateModalOpen(true);
     };
@@ -97,6 +119,17 @@ const DepartmentManagement = () => {
         setIsCreateModalOpen(false);
     };
 
+    // Helper function to get teacher name by ID
+    const getTeacherName = (teacherId) => {
+        const teacher = teachers.find(t => t.id === teacherId);
+        if (teacher) {
+            return teacher.firstName && teacher.lastName
+                ? `${teacher.firstName} ${teacher.lastName}`
+                : teacher.username;
+        }
+        return 'Not assigned';
+    };
+
     if (loading) {
         return <div className="p-6">Loading departments...</div>;
     }
@@ -104,7 +137,7 @@ const DepartmentManagement = () => {
     return (
         <div className="min-h-screen bg-gray-50 py-12 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
-                {/* Add header with back button */}
+                {/* Header with back button */}
                 <div className="mb-6 flex items-center justify-between">
                     <button
                         onClick={() => navigate('/')}
@@ -114,12 +147,11 @@ const DepartmentManagement = () => {
                         Back to Home
                     </button>
                     <h1 className="text-3xl font-bold text-gray-900">Department Management</h1>
-                    <div></div> {/* Spacer for flex alignment */}
+                    <div></div>
                 </div>
 
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
-
                         <h2 className="text-2xl font-bold text-gray-900">Department Management</h2>
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
@@ -169,7 +201,7 @@ const DepartmentManagement = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-900">
-                                                {department.headOfDepartment || 'Not assigned'}
+                                                {getTeacherName(department.headOfDepartmentId)}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -251,13 +283,21 @@ const DepartmentManagement = () => {
                                             <label className="block text-sm font-medium text-gray-700">
                                                 Head of Department
                                             </label>
-                                            <input
-                                                type="text"
+                                            <select
                                                 value={formData.headOfDepartment}
                                                 onChange={(e) => setFormData({ ...formData, headOfDepartment: e.target.value })}
                                                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                                placeholder="Name of the department head"
-                                            />
+                                            >
+                                                <option value="">Select a teacher</option>
+                                                {teachers.map(teacher => (
+                                                    <option key={teacher.id} value={teacher.id}>
+                                                        {teacher.firstName && teacher.lastName
+                                                            ? `${teacher.firstName} ${teacher.lastName} (${teacher.username})`
+                                                            : teacher.username
+                                                        }
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
 
                                         <div className="flex justify-end space-x-3 pt-4">

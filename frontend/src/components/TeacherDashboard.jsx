@@ -6,6 +6,7 @@ import Sidebar from './Sidebar';
 import EditProfileModal from './EditProfileModal';
 import CreateCourseModal from './CreateCourseModal';
 // import DepartmentManagement from './DepartmentManagement'; // Add this import
+import RoomManagement from './RoomManagement';
 
 const TeacherDashboard = () => {
     const { user, logout, isAuthenticated } = useAuthStore();
@@ -110,8 +111,8 @@ const TeacherDashboard = () => {
                 return <div className="p-6"><h2 className="text-xl font-bold">Grading - Coming Soon</h2></div>;
             case 'attendance':
                 return <div className="p-6"><h2 className="text-xl font-bold">Attendance - Coming Soon</h2></div>;
-            // case 'department':
-            //     return <DepartmentManagement />; // Updated this line
+            case 'rooms':
+                return <RoomManagement />;
             default:
                 return renderDashboardContent();
         }

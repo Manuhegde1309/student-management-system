@@ -50,7 +50,7 @@ db.Department = Sequelize.define('department', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     name: { type: DataTypes.STRING, allowNull: false, unique: true },
     description: { type: DataTypes.TEXT, allowNull: true },
-    headOfDepartment: { type: DataTypes.STRING, allowNull: true }
+    headOfDepartmentId: { type: DataTypes.INTEGER, allowNull: true } // CORRECT
 });
 
 db.Attendance = Sequelize.define('attendance', {
@@ -58,6 +58,25 @@ db.Attendance = Sequelize.define('attendance', {
     attendanceDate: DataTypes.DATEONLY,
     status: DataTypes.ENUM('Present', 'Absent', 'Late', 'Excused')
 })
+
+// Add CourseRoom model
+db.CourseRoom = Sequelize.define('courseRoom', {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    courseId: { type: DataTypes.INTEGER, allowNull: false },
+    teacherId: { type: DataTypes.INTEGER, allowNull: false },
+    roomName: { type: DataTypes.STRING, allowNull: false },
+    isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
+    description: { type: DataTypes.TEXT, allowNull: true },
+    maxCapacity: { type: DataTypes.INTEGER, defaultValue: 50 },
+    createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+    updatedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+});
+
+// Add relationships
+db.CourseRoom.belongsTo(db.Course, { foreignKey: 'courseId' });
+db.CourseRoom.belongsTo(db.Teacher, { foreignKey: 'teacherId' });
+db.Course.hasOne(db.CourseRoom, { foreignKey: 'courseId' });
+db.Teacher.hasMany(db.CourseRoom, { foreignKey: 'teacherId' });
 
 db.Student.belongsToMany(db.Course, { through: db.Enrollment, foreignKey: 'studentId' });
 db.Course.belongsToMany(db.Student, { through: db.Enrollment, foreignKey: 'courseId' });
@@ -70,6 +89,9 @@ db.Course.hasMany(db.Enrollment, { foreignKey: 'courseId' });
 
 db.Department.hasMany(db.Teacher);
 db.Teacher.belongsTo(db.Department);
+
+db.Department.belongsTo(db.Teacher, { foreignKey: 'headOfDepartmentId', as: 'HeadOfDepartment' });
+db.Teacher.hasOne(db.Department, { foreignKey: 'headOfDepartmentId', as: 'HeadedDepartment' });
 
 db.Department.hasMany(db.Course);
 db.Course.belongsTo(db.Department);

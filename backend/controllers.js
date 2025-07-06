@@ -294,7 +294,7 @@ exports.enrollStudent = async (req, res) => {
 
 exports.createDepartment = async (req, res) => {
     try {
-        const { name, description, headOfDepartment } = req.body;
+        const { name, description, headOfDepartmentId } = req.body; // Changed from headOfDepartment
 
         // Check if department already exists
         const existingDepartment = await db.Department.findOne({
@@ -308,7 +308,7 @@ exports.createDepartment = async (req, res) => {
         const department = await db.Department.create({
             name,
             description,
-            headOfDepartment
+            headOfDepartmentId // Use the correct field name
         });
 
         res.status(201).json({
@@ -317,7 +317,7 @@ exports.createDepartment = async (req, res) => {
                 id: department.id,
                 name: department.name,
                 description: department.description,
-                headOfDepartment: department.headOfDepartment
+                headOfDepartmentId: department.headOfDepartmentId
             }
         });
     } catch (error) {
@@ -326,10 +326,12 @@ exports.createDepartment = async (req, res) => {
     }
 };
 
+
+// Update your getAllDepartments controller
 exports.getAllDepartments = async (req, res) => {
     try {
         const departments = await db.Department.findAll({
-            attributes: ['id', 'name', 'description', 'headOfDepartment', 'createdAt'],
+            attributes: ['id', 'name', 'description', 'headOfDepartmentId', 'createdAt'],
             include: [
                 {
                     model: db.Course,
@@ -338,6 +340,12 @@ exports.getAllDepartments = async (req, res) => {
                 },
                 {
                     model: db.Teacher,
+                    attributes: ['id', 'firstName', 'lastName', 'username'],
+                    required: false
+                },
+                {
+                    model: db.Teacher,
+                    as: 'HeadOfDepartment',
                     attributes: ['id', 'firstName', 'lastName', 'username'],
                     required: false
                 }
@@ -384,7 +392,7 @@ exports.getDepartmentById = async (req, res) => {
 exports.updateDepartment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, headOfDepartment } = req.body;
+        const { name, description, headOfDepartmentId } = req.body;
 
         const department = await db.Department.findByPk(id);
         if (!department) {
@@ -404,7 +412,7 @@ exports.updateDepartment = async (req, res) => {
         await department.update({
             name: name || department.name,
             description: description || department.description,
-            headOfDepartment: headOfDepartment || department.headOfDepartment
+            headOfDepartmentId: headOfDepartmentId || department.headOfDepartmentId
         });
 
         res.json({
@@ -413,7 +421,7 @@ exports.updateDepartment = async (req, res) => {
                 id: department.id,
                 name: department.name,
                 description: department.description,
-                headOfDepartment: department.headOfDepartment
+                headOfDepartmentId: department.headOfDepartmentId
             }
         });
     } catch (error) {
@@ -449,4 +457,165 @@ exports.deleteDepartment = async (req, res) => {
     }
 };
 
+// Add this middleware function at the top of your controllers.js
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
+    if (!token) {
+        return res.status(401).json({ error: 'Access token required' });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ error: 'Invalid or expired token' });
+        }
+        req.user = user;
+        next();
+    });
+};
+
+// Course Room Controllers
+exports.createCourseRoom = async (req, res) => {
+    try {
+        // Extract teacher ID from token
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({ error: 'Access token required' });
+        }
+
+        // Add error handling for JWT verification
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (jwtError) {
+            console.error('JWT verification error:', jwtError.message);
+            return res.status(403).json({ error: 'Invalid or expired token' });
+        }
+
+        const teacherId = decoded.id;
+        const { courseId, roomName, description, maxCapacity } = req.body;
+
+        // Check if course exists and teacher is assigned to it
+        const course = await db.Course.findOne({
+            where: { id: courseId, teacherId }
+        });
+
+        if (!course) {
+            return res.status(404).json({ error: 'Course not found or you are not assigned to this course' });
+        }
+
+        // Check if room already exists for this course
+        const existingRoom = await db.CourseRoom.findOne({
+            where: { courseId }
+        });
+
+        if (existingRoom) {
+            return res.status(400).json({ error: 'Room already exists for this course' });
+        }
+
+        const room = await db.CourseRoom.create({
+            courseId,
+            teacherId,
+            roomName,
+            description,
+            maxCapacity: maxCapacity || 50
+        });
+
+        // Fetch the room with course details
+        const roomWithCourse = await db.CourseRoom.findByPk(room.id, {
+            include: [
+                {
+                    model: db.Course,
+                    attributes: ['id', 'name', 'code', 'description']
+                }
+            ]
+        });
+
+        res.status(201).json({
+            message: 'Course room created successfully',
+            room: roomWithCourse
+        });
+    } catch (error) {
+        console.error('Room creation error:', error);
+        res.status(500).json({ error: 'Failed to create room' });
+    }
+};
+
+exports.getTeacherRooms = async (req, res) => {
+    try {
+        // Extract teacher ID from token
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({ error: 'Access token required' });
+        }
+
+        // Add error handling for JWT verification
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (jwtError) {
+            console.error('JWT verification error:', jwtError.message);
+            return res.status(403).json({ error: 'Invalid or expired token' });
+        }
+
+        const teacherId = decoded.id;
+
+        const rooms = await db.CourseRoom.findAll({
+            where: { teacherId },
+            include: [
+                {
+                    model: db.Course,
+                    attributes: ['id', 'name', 'code', 'description']
+                }
+            ]
+        });
+
+        res.json(rooms);
+    } catch (error) {
+        console.error('Error fetching teacher rooms:', error);
+        res.status(500).json({ error: 'Failed to fetch rooms' });
+    }
+};
+
+exports.getStudentRooms = async (req, res) => {
+    try {
+        // Extract student ID from token
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({ error: 'Access token required' });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const studentId = decoded.id;
+
+        // Get rooms for courses the student is enrolled in
+        const enrollments = await db.Enrollment.findAll({
+            where: { studentId },
+            include: [
+                {
+                    model: db.Course,
+                    include: [
+                        {
+                            model: db.CourseRoom,
+                            required: true
+                        }
+                    ]
+                }
+            ]
+        });
+
+        const rooms = enrollments.map(enrollment => enrollment.Course.CourseRoom).filter(room => room);
+
+        res.json(rooms);
+    } catch (error) {
+        console.error('Error fetching student rooms:', error);
+        res.status(500).json({ error: 'Failed to fetch rooms' });
+    }
+};

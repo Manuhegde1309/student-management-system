@@ -14,6 +14,7 @@ const Sidebar = ({ activeSection, onSectionChange, userType = 'student' }) => {
     const teacherMenuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: '📊' },
         { id: 'courses', label: 'My Courses', icon: '📚' },
+        { id: 'rooms', label: 'Course Rooms', icon: '🏫' },
         { id: 'students', label: 'Students', icon: '👥' },
         { id: 'assignments', label: 'Assignments', icon: '📝' },
         { id: 'grades', label: 'Grading', icon: '⭐' },

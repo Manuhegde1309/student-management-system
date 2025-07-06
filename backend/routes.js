@@ -23,5 +23,7 @@ router.put('/department/:id', controllers.updateDepartment);
 router.delete('/department/:id', controllers.deleteDepartment);
 router.get('/enrollment/:studentId', controllers.getStudentEnrollments);
 router.post('/enrollment', controllers.enrollStudent);
-
+router.post('/course-room', controllers.createCourseRoom);
+router.get('/course-room/teacher', controllers.getTeacherRooms);
+router.get('/course-room/student', controllers.getStudentRooms);
 module.exports = router;
